@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "pifocast"
+version = "0.1.0"
+description = ""
+authors = ["Nicolas Gasnier"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+cdsapi = "^0.7.5"
+xarray = "^2025.3.1"
+tensorflow = "^2.19.0"
+magics = "^1.5.8"
+matplotlib = "^3.10.1"
+cfgrib = "^0.9.15.0"
+tf-keras = "^2.19.0"
+tensorflow-gnn = "^1.0.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
