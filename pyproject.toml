@@ -1,22 +1,31 @@
-[tool.poetry]
+[project]
+authors = [{name = "Nicolas Gasnier", email = "ngasnier@orange.fr"}]
+dependencies = []
 name = "pifocast"
+requires-python = ">= 3.11,<3.13"
 version = "0.1.0"
-description = ""
-authors = ["Nicolas Gasnier"]
-readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.12"
-cdsapi = "^0.7.5"
-xarray = "^2025.3.1"
-tensorflow = "^2.19.0"
-magics = "^1.5.8"
-matplotlib = "^3.10.1"
-cfgrib = "^0.9.15.0"
-tf-keras = "^2.19.0"
-tensorflow-gnn = "^1.0.3"
-
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.pypi-dependencies]
+pifocast = { path = ".", editable = true }
+cdsapi = ">=0.7.5"
+xarray = ">=2025.3.1"
+tensorflow = ">=2.19.0"
+magics = ">=1.5.8"
+matplotlib = ">=3.10.1"
+cfgrib = ">=0.9.15.0"
+tf-keras = "==2.19.0"
+tensorflow-gnn = ">=1.0.3"
+
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+ipykernel = ">=6.29.5,<7"
+pip = ">=25.1.1,<26"

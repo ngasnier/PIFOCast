@@ -4,3 +4,7 @@ divers
 pifo_chk*
 model
 images
+
+# pixi environments
+.pixi
+*.egg-info
