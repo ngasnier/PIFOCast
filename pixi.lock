@@ -1677,7 +1677,7 @@ packages:
 - pypi: ./
   name: pifocast
   version: 0.1.0
-  sha256: 440cab4a4c3ad11b4056ca83962ac7f52dd6005ebd8f9f05901499d6bf9789b0
+  sha256: 727efc85b9c42efa3051565e922aa7b6470be436bfb4ca6a2d94773458f4d706
   requires_python: '>=3.11,<3.13'
   editable: true
 - pypi: https://files.pythonhosted.org/packages/fe/7c/d8b1330458e4d2f3f45d9508796d7caf0c0d3764c00c823d10f6f1a3b76d/pillow-11.2.1-cp312-cp312-manylinux_2_28_x86_64.whl

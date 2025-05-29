@@ -1,5 +1,5 @@
 [project]
-authors = [{name = "Nicolas Gasnier", email = "ngasnier@orange.fr"}]
+authors = [{name = "", email = ""}]
 dependencies = []
 name = "pifocast"
 requires-python = ">= 3.11,<3.13"
