@@ -65,22 +65,27 @@ build_initial_hidden_state = tfgnn.keras.layers.MapFeatures(
     context_fn=_set_initial_context_state)
 
 
+def debug_shape(x):
+    tf.print("Forme du tenseur :", x.shape)
+    return x
+
 def pifo(gtspec: tfgnn.GraphTensorSpec, 
-        num_message_passing_steps=1,
+        num_message_passing_steps=1,#
         num_mlp_hidden_layers=1,
         mlp_hidden_size=8, 
         latent_size=8,
         output_size=3):
     
     # Input graph from dataset or inference with all input features
-    input_graph = tf.keras.layers.Input(type_spec=gtspec)
+    input = tf.keras.layers.Input(type_spec=gtspec)
+    input_graph = input.merge_batch_to_components()
 
     # We want to output a difference. So keep track of input features.
     input_state = tfgnn.keras.layers.Readout(
                 node_set_name="grid",
                 feature_name="features"
             )(input_graph)[:,0:3]
-
+    
     # Map input features to hidden state
     output_graph = build_initial_hidden_state(input_graph)
 
@@ -116,9 +121,12 @@ def pifo(gtspec: tfgnn.GraphTensorSpec,
     
     # Now we want our output to be X(t) + Y(t)
     output = tf.math.add(input_state, output)
+
+    # How to debug something ...
+    #output = tf.keras.layers.Lambda(debug_shape)(output)
     
     # Now we have a trainable/savable Keras model
-    model = tf.keras.Model(input_graph, output)
+    model = tf.keras.Model(input, output)
 
     return model
 

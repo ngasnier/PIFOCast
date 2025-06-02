@@ -167,3 +167,45 @@ def get_dataset(grib_file, grid:LatLonGrid) -> tf.data.Dataset:
     graph_spec = tfgnn.create_graph_spec_from_schema_pb(schema)
     return tf.data.Dataset.from_generator( 
         generator_fn, output_signature=(graph_spec, tf.TensorSpec((grid.NNodes,3), dtype=tf.float32))).repeat()
+
+def load_dataset(graphSpec, graphFile, targetFile, batch_size=1) -> tf.data.Dataset:
+    """
+    Load a dataset with (GraphTensor, Tensor) elements from TFRecord files.
+    Parameters :
+    graphSpec: the graph spec for the graph files
+    graphFile: path to the TFRecord file containing graph training examples.
+    targetFile: path to the TFRecord containing the target output tensor of shape [nnodes, 3]
+    batch_size: default 1. The returned dataset will be batched accordingly.
+    """
+    targetFeature = {
+        'target' : tf.io.FixedLenFeature([], tf.string) #tf.io.RaggedFeature(dtype=tf.float32)
+    }    
+
+    def mapfn(Y):
+        parsed_example = tf.io.parse_single_example(Y, targetFeature)
+        target = tf.io.parse_tensor(parsed_example['target'], out_type=tf.float32)
+        return target
+
+
+    graphDS = tf.data.TFRecordDataset(graphFile)
+    graphDS = graphDS.map(
+        lambda serialized: tfgnn.parse_single_example(graphSpec, serialized))
+    input_spec = graphDS.element_spec
+
+    targetDS = tf.data.TFRecordDataset(targetFile)
+    targetDS = targetDS.map(mapfn, num_parallel_calls=tf.data.AUTOTUNE)
+
+    trainDS = tf.data.Dataset.zip((graphDS, targetDS))
+    trainDS = trainDS.repeat()
+
+    if batch_size>1:
+        # Needs to merge targets because of merge_batch_to_components() occuring in the model.
+        # The output tensor will not keep the batch dimension, and this will fail the loss function.
+        trainDS = trainDS.batch(batch_size, drop_remainder=True)
+        def merge_target(target):
+            # Reshape [batch, nnodes, 3] -> [batch*nnodes, 3]
+            return tf.reshape(target, [-1, 3])
+
+        trainDS = trainDS.map(lambda graph, target: (graph, merge_target(target)))
+
+    return trainDS
