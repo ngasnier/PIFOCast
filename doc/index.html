@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <title>Présentation de PIFOCast</title>
+    </head>
+    <body>
+<h1>Présentation de PIFOCast</h1>
+
+<p>Au printemps, j'ai travaillé à mes heures perdues sur un modèle de prévision #météo simple utilisant le #deeplearning (IA). Et dire qu'au départ c'est parti d'une idée de jeu ! Thead qui débrief tout ça, pour les passionnés, les programmeurs #python ou les curieux tout simplement ! ⬇️</p>
+<figure><img src="img/presentation%20fr%2001.jpg"/><figcaption>Diapositive de titre : PIFOCast, un modèle simple de prévision météo</figcaption></figure>
+
+<hr/>
+<p>PIFOCast c'est la suite de PIFO. Parti d'une idée de jeu web (#javascript) basé sur la simulation météo. Un genre de populous où on incarne une divinité qui peut influencer la météo avec des outils (plus de soleil ici, etc...) pour aider ou punir les peuples qui nous vénèrent. </p>
+<figure><img src="img/presentation%20fr%2002.jpg"/><figcaption>Diapo d'introduction à PIFO (Projet Informatique à Formules Ouvertes). La suite de PIFO, un modèle Javascript simple.</figcaption></figure>
+
+<hr/>
+<p>Modèle qui se voulait très simple (barotrope, basé sur un bouquin de Jean Coiffier). S'est avéré plus complexe et lourd en calcul que prévu. Je me suis pris au jeu, et finalement j'en suis arrivé à développer un modèle barocline et tout le framework pour l'alimenter et restituer les prévisions.</p>
+<figure><img src="img/presentation%20fr%2003.jpg"/><figcaption>Exemples de sortie de PIFO (pression, géopotentiel 500hPa et température 500hPa). Les fonctions clés de PIFO : coeurs barotropique et baroclinique, initialisation depuis les analyses GFS, aire limitée de résolution ~1°.</figcaption></figure>
+
+<hr/>
+<p>Je ne peux pas expliquer en détail le modèle ici, mais j'y reviendrai volontiers si ça vous intéresse 😀 Mais en gros, c'est basé sur la simulation physique avec des équations discrétisées sur une grille. On les intègre par itération successive pour avancer dans le temps.</p>
+<figure><img src="img/presentation%20fr%2004.jpg"/><figcaption>Description rapide d'un modèle classique. On itère un calcul de dérivées et de paramétrisations, puis on calcule l'état T+1 avec des schémas d'intégration. Ce genre de modèle nécessite une ingénierie humaine complexe (modèles dans le modèle, problèmes d'instabilité numérique...) et sont lourds en calculs à cause de la non-linéarité qui limite le pas de temps.</figcaption></figure>
+
+<hr/>
+<p>Donc PIFOCast. Je m'inspire des travaux de Google (Gencast) basés sur un GNN (Graph Neural Network) pour faire l'équivalent du PIFO barotrope, mais avec du deep learning. Et bien sûr avec les moyens et compétences du bord. Le but c'est d'arriver à un résultat physiquement cohérent, rien de plus.</p>
+<figure><img src="img/presentation%20fr%2005.jpg"/><figcaption>Objectifs de PIFOCast : utiliser l'approche GNN (Graph Neural Network), avec une puissance de calcul limitée, et donner des résultats physiquement réalistes.</figcaption></figure>
+
+<hr/>
+<p>L'idée c'est de représenter la grille du modèle par un graphe sur lequel sont encodées les donnée météo par un réseau de neurone. Puis d'apprendre au modèle à prédire un nouvel état à T+1 (avec un pas de temps de 6h). Il doit donc figurer lui-même la physique sous-jacente.</p>
+<figure><img src="img/presentation%20fr%2006.jpg"/><figcaption>Générer une prévision : pour un état X(T), le modèle prédit un nouvel état X(T+1), et on itère pour créer une prévision complète.</figcaption></figure>
+
+<hr/>
+<p>Contrairement à Gencast qui utilise un icosaèdre raffiné, je fais simple avec une grille classique lat/lon. A la différence d'un réseau à convolution, on peut faire reboucler la grille selon les longitudes. Les points sont répétés aux pôles, et ne reçoivent pas d'information (edges sortants).</p>
+<figure><img src="img/presentation%20fr%2007.jpg"/><figcaption>Architecture de base du graphe organisé en points de latitude/longitude. Comparé à un réseau à convolution, ça permet de gérer la circularité de la terre en faisant boucler le graphe. Les pôles sont traités en répétant le point et en dirigeant le graphe uniquement sortant.</figcaption></figure>
+
+<hr/>
+<p>Sur les noeuds, on va placer les variables à prédire (Géopotentiel et vent U, V à 500hHpa). Et aussi des variables qui permettent au modèle de se répérer et comprendre comment \"intégrer\" en fonction des noeuds adjacents, mais aussi de la position sur la terre.</p>
+<figure><img src="img/presentation%20fr%2008.jpg"/><figcaption>Features. Sur les noeuds géopotentiel et vent 500hPa, sin(lat), cos(lon), sin(lon). Sur les edges la longueur, les coordonnées relatives entre les noeuds. Configuration type barotrope.</figcaption></figure>
+
+<hr/>
+<p>Architecture de type encoder - processor -  decoder. Données encodées par un MLP (réseau de neurones) vers un espace latent, puis plusieurs couches de message passing (propagation sur les edges via un MLP, puis agrégation sur les noeuds via unautre MLP). Puis décodage pour sortir de l'espace latent.</p>
+<figure><img src="img/presentation%20fr%2009.jpg"/><figcaption>Architecture et mise à jour du graphe via message passing. On encode les features vers un espace latent. Puis on met à jour les features de edges, qui servent à leur tour à mettre à jour les features de noeuds. Le résultat est ensuite décodé pour revenir à un espace données.</figcaption></figure>
+
+<hr/>
+<p>Le job consiste à faire apprendre aux différentes couches de MLP via descente de gradient le calcul d'une différence entre l'état d'entrée et la sortie attendue. On utilise ERA5 comme données, qu'on découpe en dataset train et validation classique. On utilise tensorflow GNN pour implémenter.</p>
+<figure><img src="img/presentation%20fr%2010.jpg"/><figcaption>On utilise les réanalyses ERA5 pour fournir les champs de données. On normalise pour améliorer la convergence des données. La sortie du modèle est une tête de prédiction classique de type MLP.</figcaption></figure>
+
+<hr/>
+<p>Bon là ça devient un peu plus technique : les hyperparamètres. Le point critique c'est la fonction d'activation SiLU (combinaison de ReLU et sigmoïd), indispensable car sinon les gradients négatifs sont annulés. Layer norm c'est pour éviter les problèmes de vanishing gradient.</p>
+<figure><img src="img/presentation%20fr%2011.jpg"/><figcaption>Les hyperparamètres de MLP : 1 couche interne, 8 états latents, fonction d'activation SiLU, layer normalisation partout sauf pour le décodeur.</figcaption></figure>
+
+<hr/>
+<p>Côté architecture, on utilise 4 couches de message passing et 1 MLP à 8 états pour la sortie. Le learning est réalisé via une fonction Mean Square Error pour le coût, et l'optimiseur Adam pour la descente de gradients.</p>
+<figure><img src="img/presentation%20fr%2012.jpg"/><figcaption>Hyperparamètres du modèle : 4 couches de message passing, 1 MLP à 8 états pour la sortie, loss de type Mean Square Error, optimiseur Adam.</figcaption></figure>
+
+<hr/>
+<p>Bon alors où j'en suis dans tout ça ? Et bien j'ai codé la création du dataset depuis ERA5 et l'apprentissage, ainsi qu'une restitution basique. Comme je suis limité par mon CPU (pas de GPU sur ma machine linux) j'ai juste prototypé pour 300 exemples. Ca learn, quoique la courbe est un peu brutale.</p>
+<figure><img src="img/presentation%20fr%2013.jpg"/><figcaption>Courbe de learning vs validation pour 300 exemples</figcaption></figure>
+
+<hr/>
+<p>Côté résultats, forcément c'est limité pour le moment. Ca marche pas trop mal pour les premières itérations, mais faut pas aller trop loin. Le modèle doit être un peu trop overfitté sur mon petit dataset. </p>
+<figure><img src="img/presentation%20fr%2014.jpg"/><figcaption>Comparaison entre la donnée de référence et la prédiction du modèle sur un exemple.</figcaption></figure>
+
+<hr/>
+<p>Quelques chiffres clés ! Il me faut 30 minutes pour fitter le modèle. Pour bien faire, il faudrait faire 30 ans de climato pour que ça soit un bon modèle. J'ai mis ce que ça ferait en temps de calcul avec mes moyens limités...</p>
+<figure><img src="img/presentation%20fr%2015.jpg"/><figcaption>Chiffres clés : 65160 noeufs, 257760 edges, temps d'apprentissage 30 min. 2566 paramètres,  mémoire ~3Go, 30s inférence sur 2.5 jours (10 échéances). Dataset  741Mo / mois. En comparaison, il faudrait 280Go pour la climato complète par pas de 6h et 8 jours de calcul (1 journée avec un GPU).</figcaption></figure>
+
+<hr/>
+<p>Vous l'avez compris, c'est loin d'être fini. On a un petit dataset, un code un peu expérimental mais pas si mal foutu que ça. Et surtout un signal comme quoi a marche. Mais il faudrait maintenant expérimenter avec un plus gros dataset.</p>
+<figure><img src="img/presentation%20fr%2016.jpg"/><figcaption>Diapo présentant le statut du projet : expérimental. Signaux de résultats. Code... *tousse* à structurer. Dataset très restreint.</figcaption></figure>
+
+<hr/>
+<p>La cible du projet, c'est d'améliorer le modèle en complexifiant le graphe (faire comme pour le multimesh de Graphcast) et ce sur un plus gros dataset. Il restera aussi à créer les programmes de prévision et de carto pour le rendre utilisable et publiable sur GitHub.</p>
+<figure><img src="img/presentation%20fr%2017.jpg"/><figcaption>Diapo de présentation de la cible du projet : augmenter le dataset, complexifier le graphe (multigrid, icosaèdre), créer le programme d'inférence et les représentations graphiques, publication sur Github.</figcaption></figure>
+
+<hr/>
+<p>Pour finir, je me dois de citer les principales sources qui m'ont servi pour ce projet. Les travaux de Google Deepmind notamment (Graphcast, Gencast) ainsi que les librairies Tensorflow et Tensorflow GNN.</p>
+<figure><img src="img/presentation%20fr%2018.jpg"/><figcaption>Diapo qui présente les références.</figcaption></figure>
+
+<hr/>
+<p>Voilà, j'espère que ce thread vous aura intéressé et que ça ne vous aura pas trop noyé de choses compliquées. Si les sujets un peu techniques comme ça vous intéressent, j'en referais d'autres. N'hésitez pas à commenter !</p>
+<figure><img src="img/presentation%20fr%2019.jpg"/><figcaption>Diapo de conclusion, merci pour votre attention.</figcaption></figure>
+    </body>
+</html>

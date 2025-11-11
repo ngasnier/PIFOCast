@@ -11,7 +11,7 @@ Dependencies
 
 The project requires the following to run and setup :
 - python : to run all the scripts
-- poetry : to setup the venv for the project
+- pixi : to setup the venv for the project
 
 The following library are used :
 - cdsapi : to retrieve ECMWF ERA 5 data
@@ -19,7 +19,7 @@ The following library are used :
 - tensorflow : deep learning framework with CUDA GPU integration
 - magics : to plot the weather maps.
 
-Additionnaly, Magics has some system library dependencies, not installed by poetry (examle using Python): 
+Additionnaly, Magics has some system library dependencies, not installed by poetry (example using Python): 
 ```
 sudo apt install netcdf-bin
 sudo apt install proj-bin
@@ -34,3 +34,26 @@ You need to make symbolic links to lib versions in /usr/lib/x86_64-linux-gnu, e.
 ```
   sudo ln -s libproj.so.25 libproj.so.15
 ```
+
+Usage
+============
+
+First, initialize the Python environment for the project with the following command : 
+```
+pixi install
+```
+
+Then, create a dataset directory. Use the notebook pifocast-dataset.ipynb to download and generate the training data.
+You may customize code as you need to change the amount of data to process. It is setup to work with a small
+dataset, about 300 training examples.
+
+Next, create a pifo_chk directory. You can train the model using the notebook pifocast-graph.ipynb. At the end, there is 
+a little test code to check if the model is behaving as intended.
+
+Reference
+============
+Find a presentation in french in the doc folder. This is the resources used for the following threads on my social neworks:
+
+https://bsky.app/profile/meteoblois.bsky.social/post/3lueyfw6v3s2x
+
+https://mastodon.social/@meteoblois/114884466955842462
