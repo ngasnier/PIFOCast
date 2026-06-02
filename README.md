@@ -54,6 +54,8 @@ Reference
 ============
 Find a presentation in french in the doc folder. This is the resources used for the following threads on my social neworks:
 
+https://www.meteo-blois.fr/model/modeles.html
+
 https://bsky.app/profile/meteoblois.bsky.social/post/3lueyfw6v3s2x
 
 https://mastodon.social/@meteoblois/114884466955842462
