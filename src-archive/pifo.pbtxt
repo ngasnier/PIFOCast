@@ -1,0 +1,26 @@
+node_sets {
+  key: "grid"
+  value {
+    features {
+      key: "features"
+      value {
+        dtype: DT_FLOAT
+        shape { dim { size : 6 } }
+      }
+    }
+  }
+}
+edge_sets {
+  key: "edges"
+  value {
+    source: "grid"
+    target: "grid"
+    features {
+        key: "edge_features"
+        value {
+            dtype: DT_FLOAT
+            shape { dim { size : 3 } }
+        }
+    }
+  }
+}

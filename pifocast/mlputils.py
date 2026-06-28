@@ -1,30 +1,41 @@
-import tensorflow as tf
+import jax
+import jax.numpy as jnp
+import flax.linen as nn
 
-# Note that gradients vanishes with relu, leaky_relu is more robust but the silu function seems to work best,  
-# it is used in Gencast after all. So we default to that.
+class MLP(nn.Module):
+    num_hidden_layers: int
+    hidden_size: int
+    output_size: int
+    use_layer_norm: bool
+    activation: str = "silu"
+    activate_final: bool = False
+
+    @nn.compact
+    def __call__(self, x):
+        for i in range(self.num_hidden_layers):
+            x = nn.Dense(self.hidden_size, kernel_init=nn.initializers.variance_scaling(
+                1.0, "fan_in", "truncated_normal"), name=f"dense_{i}")(x)
+            x = getattr(nn, self.activation)(x)
+        x = nn.Dense(self.output_size, kernel_init=nn.initializers.variance_scaling(
+            1.0, "fan_in", "truncated_normal"), name=f"dense_{self.num_hidden_layers}")(x)
+        if self.activate_final:
+            x = getattr(nn, self.activation)(x)
+        if self.use_layer_norm:
+            x = nn.LayerNorm(name="layer_norm")(x)
+        return x
+
 
 def build_mlp(num_hidden_layers: int,
               hidden_size: int,
               output_size: int,
               use_layer_norm: bool,
-              activation: str = "silu",#tf.keras.layers.LeakyReLU(alpha=0.01), 
+              activation: str = "silu",
               activate_final: bool = False,
-              name: str = "mlp"):
-    """Builds an MLP."""
-    output_sizes = [hidden_size] * num_hidden_layers + [output_size]
-    mlp = tf.keras.Sequential(name="mlp")
-    for layer_i, size in enumerate(output_sizes):
-        layer_activation = activation
-        if not activate_final and layer_i == len(output_sizes) - 1:
-            layer_activation = None
-        mlp.add(tf.keras.layers.Dense(
-            size,
-            activation=layer_activation,
-            use_bias=True,
-            kernel_initializer="variance_scaling",
-            bias_initializer="zeros",
-            name=f"{name}/dense_{layer_i}"))
-    if use_layer_norm:
-        mlp.add(tf.keras.layers.LayerNormalization(
-            name=f"{name}/layer_norm"))
-    return mlp
+              name: str = "mlp") -> MLP:
+    return MLP(num_hidden_layers=num_hidden_layers,
+               hidden_size=hidden_size,
+               output_size=output_size,
+               use_layer_norm=use_layer_norm,
+               activation=activation,
+               activate_final=activate_final,
+               name=name)
